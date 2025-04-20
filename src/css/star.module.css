@@ -1,0 +1,56 @@
+/* star.module.css */
+.starWrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes meteorMove {
+    0% {
+        transform: translate(var(--start-x, 0), -50px);
+    }
+    100% {
+        transform: translate(calc(var(--start-x, 0) - 100vh), 200vh);
+    }
+}
+
+@keyframes starTwinkle {
+    0% { opacity: 0; }
+    30% { opacity: 1; }    
+    70% { opacity: 1; }  
+    100% { opacity: 0.2; }
+}
+
+.meteorContainer {
+    position: relative;
+    top: 0;
+    pointer-events: none;
+    will-change: transform;
+    width: 4px;
+    height: 4px;
+}
+
+.star {
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    box-shadow: 0 0 5px 3px rgb(212, 0, 255);
+}
+
+.tail {
+    position: absolute;
+    top: calc(50% - 1px);
+    left: -950%;
+    width: 2000%;
+    height: 2px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0), #eee);
+    transform: rotateZ(-55deg) translateX(50%);
+
+}
