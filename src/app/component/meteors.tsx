@@ -29,11 +29,15 @@ export default function StarCanvas({ count = 100, colors }: StarCanvasProps) {
       speed: number;
       size: number;
       tail: Array<{ x: number; y: number }>;
+      lastTwinkleTime: number;    // 마지막 반짝임 시간
+      twinkleInterval: number;    // 다음 반짝임까지의 간격
+      currentTwinkle: number;     // 현재 반짝임 강도
       twinkle: number;
       twinkleSpeed: number;
       tailColor: Color;
       glowColor: Color;
       starColor: Color;
+      angle: number;
     }
     
     const meteors: Meteor[] = [];
@@ -42,14 +46,18 @@ export default function StarCanvas({ count = 100, colors }: StarCanvasProps) {
       meteors.push({
         x: Math.random() * canvas.width*2,
         y: -Math.random() * canvas.height,
-        speed: Math.random() * 2 + 1, // 별똥별 속도
+        speed: Math.random() * 0.5 + 2, // 별똥별 속도
         size: Math.random() * 2 + 1, // 별의 크기
         tail: [],
+        lastTwinkleTime: Date.now(),
+        twinkleInterval: Math.random() * 1000 + 500, // 0.5~1.5초 사이의 랜덤 간격
+        currentTwinkle: Math.random(),
         twinkle: Math.random() * Math.PI * 2, // 초기 반짝임 위상
         twinkleSpeed: 0.08 + Math.random() * 0.1, // 반짝임 속도
         tailColor: colors[0],
         glowColor: colors[1],
         starColor: colors[2],
+        angle: (38 + Math.random() * 7) * Math.PI / 180,
       });
     }
 
@@ -106,11 +114,11 @@ export default function StarCanvas({ count = 100, colors }: StarCanvasProps) {
         ctx.fill();
 
         // 별똥별 이동
-        meteor.y += meteor.speed;
-        meteor.x -= meteor.speed;
+        meteor.y += meteor.speed * Math.sin(meteor.angle);
+        meteor.x -= meteor.speed * Math.cos(meteor.angle);
 
         // 화면 밖으로 나가면 재설정
-        if (meteor.y > canvas.height) {
+        if (meteor.y > canvas.height || meteor.x < -10) {
           meteor.y = -10;
           meteor.x = Math.random() * canvas.width * 2;
           meteor.tail = [];

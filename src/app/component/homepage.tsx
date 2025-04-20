@@ -51,8 +51,8 @@ const Homepage: React.FC = () => {
         </Headers>
         <HeaderButtonContainer>
         <SectionButtonContainer>        
-          <SectionTotalButton>전체</SectionTotalButton>
-          <SectionDoneButton>완료</SectionDoneButton>  
+          <SectionButton>전체</SectionButton>
+          <SectionButton>완료</SectionButton>  
         </SectionButtonContainer>
         <MenuButtonContainer>
           {hasCheckedItems && (
@@ -267,7 +267,6 @@ const SectionButtonContainer = styled.div`
   flex: 1;
   height: 50px;
   padding: 10px;
-
   background-color: ${colors.head2};
   gap: 10px;
   border-bottom: 3px solid transparent; // 먼저 투명한 border 설정
@@ -276,25 +275,18 @@ const SectionButtonContainer = styled.div`
   background-color: #white;
   `
 
-const SectionTotalButton = styled.button`
-  background-color: #28a745;
-  color: white;
+const SectionButton = styled.button`
+  background-color:rgb(255, 255, 255);
+  color: black;
   border: none;
   height: 100%;
-  padding: 5px;
+  display: flex;
+  align-items: center;
+  font-size: 1.2em;
+  padding: 15px 5px;
   border-radius: 5px;
+  border: 2px solid #666666;
   cursor: pointer;`
-
-  const SectionDoneButton = styled.button`
-  background-color: #28a745;
-  color: white;
-  border: none;
-  height: 100%;
-  padding: 5px;
-  border-radius: 5px;
-  cursor: pointer;`
-
-
 
 
 const MenuButtonContainer = styled.div`
