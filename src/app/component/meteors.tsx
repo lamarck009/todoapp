@@ -1,7 +1,14 @@
 import { useEffect, useRef } from 'react';
+import { Color } from "@/styles/theme";
 
-export default function StarCanvas({ count = 100 }) {
+interface StarCanvasProps {
+  count: number;
+  colors: Color[];  // Color 인터페이스 사용
+}
+
+export default function StarCanvas({ count = 100, colors }: StarCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -16,36 +23,45 @@ export default function StarCanvas({ count = 100 }) {
     };
     setCanvasSize();
 
-    const meteors: Array<{
+    interface Meteor {
       x: number;
       y: number;
       speed: number;
       size: number;
       tail: Array<{ x: number; y: number }>;
-      twinkle: number; // 반짝임을 위한 값 추가
-      twinkleSpeed: number; // 반짝임 속도를 위한 값 추가
-    }> = [];
+      twinkle: number;
+      twinkleSpeed: number;
+      tailColor: Color;
+      glowColor: Color;
+      starColor: Color;
+    }
+    
+    const meteors: Meteor[] = [];
 
     for (let i = 0; i < count; i++) {
       meteors.push({
         x: Math.random() * canvas.width*2,
         y: -Math.random() * canvas.height,
-        speed: Math.random() * 2 + 1,
-        size: Math.random() * 2 + 1,
+        speed: Math.random() * 2 + 1, // 별똥별 속도
+        size: Math.random() * 2 + 1, // 별의 크기
         tail: [],
         twinkle: Math.random() * Math.PI * 2, // 초기 반짝임 위상
-        twinkleSpeed: 0.1 + Math.random() * 0.2 // 반짝임 속도
+        twinkleSpeed: 0.08 + Math.random() * 0.1, // 반짝임 속도
+        tailColor: colors[0],
+        glowColor: colors[1],
+        starColor: colors[2],
       });
     }
 
 
     const animate = () => {
+      if (!canvas || !ctx) return; // Defensive check
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       meteors.forEach((meteor) => {
         // 반짝임 업데이트
         meteor.twinkle += meteor.twinkleSpeed;
-        const twinkleIntensity = (Math.sin(meteor.twinkle) + 1) / 2; // 0과 1 사이의 값
+        const twinkleIntensity = (Math.sin(meteor.twinkle) + 1) / 2; // 0과 1 사이의 값으로 변환
 
         // 꼬리 업데이트
         meteor.tail.unshift({ x: meteor.x, y: meteor.y });
@@ -60,7 +76,7 @@ export default function StarCanvas({ count = 100 }) {
 
           ctx.beginPath();
           ctx.lineWidth = lineWidth;
-          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+          ctx.strokeStyle = `rgba(${meteor.tailColor.r}, ${meteor.tailColor.g}, ${meteor.tailColor.b}, ${alpha})`;
           ctx.moveTo(meteor.tail[i].x, meteor.tail[i].y);
           ctx.lineTo(meteor.tail[i + 1].x, meteor.tail[i + 1].y);
           ctx.stroke();
@@ -75,16 +91,16 @@ export default function StarCanvas({ count = 100 }) {
           meteor.x, meteor.y, 0,
           meteor.x, meteor.y, glowSize * 2
         );
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${glowAlpha})`);
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        gradient.addColorStop(0, `rgba(${meteor.glowColor.r}, ${meteor.glowColor.g}, ${meteor.glowColor.b}, ${glowAlpha})`);
+        gradient.addColorStop(1, `rgba(${meteor.glowColor.r}, ${meteor.glowColor.g}, ${meteor.glowColor.b}, 0)`);
         
+        // 중심 별 그리기
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(meteor.x, meteor.y, glowSize * 2, 0, Math.PI * 2);
         ctx.fill();
 
-        // 중심 별
-        ctx.fillStyle = `rgba(255, 255, 255, ${glowAlpha + 0.3})`;
+        ctx.fillStyle = `rgba(${meteor.starColor.r}, ${meteor.starColor.g}, ${meteor.starColor.b}, ${glowAlpha + 0.3})`;
         ctx.beginPath();
         ctx.arc(meteor.x, meteor.y, glowSize, 0, Math.PI * 2);
         ctx.fill();
@@ -100,8 +116,7 @@ export default function StarCanvas({ count = 100 }) {
           meteor.tail = [];
         }
       });
-
-      requestAnimationFrame(animate);
+      animationFrameIdRef.current = requestAnimationFrame(animate);
     };
 
     animate();
@@ -111,8 +126,12 @@ export default function StarCanvas({ count = 100 }) {
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [count]);
+    return () => {      window.removeEventListener('resize', handleResize);
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+      }
+    };
+  }, [count, colors]);
 
   return (
     <div style={{

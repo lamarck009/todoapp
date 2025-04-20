@@ -1,3 +1,4 @@
+//theme.ts
 export const colors = {
     primary: ' #4cc35b',
     back: `
@@ -17,3 +18,31 @@ export const colors = {
     btok: '#4caf50',
     btno: '#f44336',
 } as const;
+
+export const STAR_COLORS: Color[][] = [
+    // CLASSIC
+    [{ r: 255, g: 255, b: 255 },
+     { r: 255, g: 255, b: 255 },
+     { r: 255, g: 255, b: 255 }
+    ],
+    
+    // WARM
+    [
+      { r: 255, g: 255, b: 255 },
+      { r: 255, g: 223, b: 186 },
+      { r: 255, g: 182, b: 193 }
+    ],
+    
+    // COOL
+    [
+      { r: 255, g: 255, b: 255 },
+      { r: 173, g: 216, b: 230 },
+      { r: 230, g: 230, b: 250 }
+    ]
+  ];
+
+  export interface Color {
+    r: number;
+    g: number;
+    b: number;
+  }  

@@ -1,27 +1,24 @@
+//page.tsx
 "use client"
-import Image from "next/image";
-import styles from "./page.module.css";
 import Homepage from "./component/homepage";
 import Star from "./component/star";
 import styled from '@emotion/styled';   
 import StarCanvas from "@/app/component/meteors";
 import { useState } from "react";
-import { TodoProvider } from '@/app/context/TodoContext';
-
+import { Color, STAR_COLORS } from "@/styles/theme";
 
 export default function Home() {
   const [starCount, setStarCount] = useState(100);
- 
+  const [themeIndex, setThemeIndex] = useState(0);
 
   return (
     <>
-    <TodoProvider>
     <Maincontainer>
       <div style={{
         position: 'fixed', // fixed로 변경
         zIndex:1
         }}>
-        <StarCanvas count={starCount} />
+      <StarCanvas count={100} colors={STAR_COLORS[themeIndex]} />
       </div>
       <div style={{
           position: 'fixed',
@@ -69,7 +66,6 @@ export default function Home() {
         <Homepage />
       </div>
       </Maincontainer>
-      </TodoProvider>
     </>
   );
 }

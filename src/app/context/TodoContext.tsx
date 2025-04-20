@@ -1,15 +1,18 @@
+//todoContext.tsx
 'use client' // Next.js에서 클라이언트 컴포넌트임을 명시
 import { nanoid } from 'nanoid';
-
-
-// 필요한 React 훅과 타입을 임포트
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
+import { ItemInterface } from "react-sortablejs";
 
 // Todo 아이템의 타입 정의
-interface Todo {
+export interface Todo extends ItemInterface {
     id: string;
     text: string; 
     isChecked: boolean;
+    // Sortable.js에서 사용하는 선택적 필드들
+    chosen?: boolean;
+    selected?: boolean;
+    filtered?: boolean;
 }
 
 // TodoContext에서 사용할 타입 정의
@@ -17,6 +20,7 @@ interface TodoContextType {
     todos: Todo[]; // 할일 목록을 저장할 배열
     addTodo: (text: string) => void; // 할일을 추가하는 함수
     toggleTodo: (id: string) => void; // 할일의 체크 상태를 토글하는 함수
+    setTodos: React.Dispatch<React.SetStateAction<Todo[]>>; // 추가된 부분
 }
 
 // TodoContext 생성 (초기값은 undefined)
@@ -48,7 +52,7 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
 
     // Context Provider로 자식 컴포넌트들을 감싸서 todos와 addTodo를 전달
     return (
-        <TodoContext.Provider value={{ todos, addTodo, toggleTodo }}>
+        <TodoContext.Provider value={{ todos, addTodo, toggleTodo, setTodos }}>
             {children}
         </TodoContext.Provider>
     );
