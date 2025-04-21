@@ -9,6 +9,103 @@ import { StarGlowParams } from "@/styles/theme";
 export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
+  const meteorsRef = useRef<Meteor[]>([]); // 별들의 상태
+  const colorsRef = useRef(colors); // 색상을 위한 ref 추가
+  const countRef = useRef(count); //개수를 위한 ref
+
+
+  const drawStar = ({ ctx, x, y, size, spikes = 5 }: StarDrawParams) => {
+    let rotation = (Math.PI / 2) * 3;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    for (let i = 0; i < spikes; i++) {
+      let outerX = x + Math.cos(rotation) * size;
+      let outerY = y + Math.sin(rotation) * size;
+
+      if (i === 0) {
+        ctx.moveTo(outerX, outerY);
+      } else {
+        ctx.lineTo(outerX, outerY);
+      }
+
+      let innerX = x + Math.cos(rotation + step) * (size / 2);
+      let innerY = y + Math.sin(rotation + step) * (size / 2);
+      ctx.lineTo(innerX, innerY);
+
+      rotation += step * 2;
+    }
+
+    ctx.closePath();
+  };
+
+  // 별 모양 글로우 효과를 그리는 함수
+  const drawStarGlow = ({ ctx, x, y, size, color, alpha, spikes = 5 }: StarGlowParams) => {
+    const layers = 15; // 글로우 효과의 레이어 수
+    const sizeStep = size / layers;
+
+    for (let i = layers; i > 0; i--) {
+      const currentSize = sizeStep * i;
+      const currentAlpha = alpha * Math.pow((layers - i + 1) / layers, 2);
+
+      ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${currentAlpha})`;
+      ctx.beginPath();
+  drawStar({ ctx, x, y, size: currentSize, spikes });
+      ctx.fill();
+    }
+  };
+
+  // 별 생성 함수를 별도로 정의
+  const createMeteor = (canvas: HTMLCanvasElement) => {
+    const size = Math.random() * 4 + 1;
+    return {
+      x: Math.random() * canvas.width * 2,
+      y: -Math.random() * canvas.height,
+      speed: Math.random() * 0.5 + starspeed,
+      size: size,
+      tail: [],
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.08 + Math.random() * 0.1,
+      tailColor: colorsRef.current[0],
+      glowColor: colorsRef.current[1],
+      starColor: colorsRef.current[2],
+      angle: ((42 + Math.random() * 4) * Math.PI) / 180,
+      maxTailLength: 50 + size * 15,
+    };
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const currentCount = meteorsRef.current.length;
+    
+    if (count > currentCount) {
+      // 별을 추가
+      const newMeteors = Array(count - currentCount)
+        .fill(null)
+        .map(() => createMeteor(canvas));
+      meteorsRef.current = [...meteorsRef.current, ...newMeteors];
+    } else if (count < currentCount) {
+      // 별을 제거
+      meteorsRef.current = meteorsRef.current.slice(0, count);
+    }
+    
+    countRef.current = count;
+  }, [count]);
+
+
+ // 색상이 변경될 때 업데이트
+ useEffect(() => {
+  meteorsRef.current.forEach(meteor => {
+    meteor.tailColor = colors[0];
+    meteor.glowColor = colors[1];
+    meteor.starColor = colors[2];
+  });
+  colorsRef.current = colors;
+}, [colors]);
+
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -23,73 +120,42 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
     };
     setCanvasSize();
 
-    const drawStar = ({ ctx, x, y, size, spikes = 5 }: StarDrawParams) => {
-      let rotation = (Math.PI / 2) * 3;
-      let step = Math.PI / spikes;
 
-      ctx.beginPath();
-      for (let i = 0; i < spikes; i++) {
-        let outerX = x + Math.cos(rotation) * size;
-        let outerY = y + Math.sin(rotation) * size;
+  }, []); 
 
-        if (i === 0) {
-          ctx.moveTo(outerX, outerY);
-        } else {
-          ctx.lineTo(outerX, outerY);
-        }
+  
+  // 속도 변경을 감지하여 별들의 속도만 업데이트
+  useEffect(() => {
+    meteorsRef.current.forEach(meteor => {
+      meteor.speed = Math.random() * 0.5 + starspeed;
+    });
+  }, [starspeed]);
 
-        let innerX = x + Math.cos(rotation + step) * (size / 2);
-        let innerY = y + Math.sin(rotation + step) * (size / 2);
-        ctx.lineTo(innerX, innerY);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-        rotation += step * 2;
-      }
-
-      ctx.closePath();
-    };
-
-    // 별 모양 글로우 효과를 그리는 함수
-    const drawStarGlow = ({ ctx, x, y, size, color, alpha, spikes = 5 }: StarGlowParams) => {
-      const layers = 15; // 글로우 효과의 레이어 수
-      const sizeStep = size / layers;
-
-      for (let i = layers; i > 0; i--) {
-        const currentSize = sizeStep * i;
-        const currentAlpha = alpha * Math.pow((layers - i + 1) / layers, 2);
-
-        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${currentAlpha})`;
-        ctx.beginPath();
-    drawStar({ ctx, x, y, size: currentSize, spikes });
-        ctx.fill();
-      }
-    };
-
-
-
-    const meteors: Meteor[] = [];
-    for (let i = 0; i < count; i++) {
-      const size = Math.random() * 4 + 1;
-      meteors.push({
-        x: Math.random() * canvas.width * 2,
-        y: -Math.random() * canvas.height,
-        speed: Math.random() * 0.5 + starspeed, // 별똥별 속도
-        size: size, // 별똥별 크기
-        tail: [],
-        twinkle: Math.random() * Math.PI * 2, // 초기 반짝임 위상
-        twinkleSpeed: 0.08 + Math.random() * 0.1, // 반짝임 속도
-        tailColor: colors[0],
-        glowColor: colors[1],
-        starColor: colors[2],
-        angle: ((42 + Math.random() * 4) * Math.PI) / 180,
-        maxTailLength: 50+ size * 15, // 최대 꼬리 길이 (별 크기에 비례)
-      });
+    // 초기 별 생성 (처음 한 번만)
+    if (meteorsRef.current.length === 0) {
+      meteorsRef.current = Array(countRef.current)
+        .fill(null)
+        .map(() => createMeteor(canvas));
     }
+
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    setCanvasSize();
 
     const animate = () => {
       if (!canvas || !ctx) return; // Defensive check
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      meteors.forEach((meteor) => {
+    meteorsRef.current.forEach((meteor: Meteor) => {  // meteor의 타입을 명시적으로 지정
         // 화면 상의 상대적 위치에 따른 꼬리 길이 계산
         const screenProgress = Math.pow(meteor.x / (canvas.width * 2), 2);
         const currentMaxLength = Math.floor(
@@ -250,7 +316,7 @@ for (let i = points.length - 1; i >= 0; i--) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
     };
-  }, [count, colors, starspeed]);
+  }, []);
 
   return (
     <Background>
