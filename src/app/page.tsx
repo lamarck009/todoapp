@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Color, STAR_COLORS } from "@/styles/theme";
 
 export default function Home() {
-  const [starCount, setStarCount] = useState(100);
+  const [starCount, setStarCount] = useState(50);
   const [themeIndex, setThemeIndex] = useState(0);
 
   return (
@@ -20,7 +20,7 @@ export default function Home() {
             zIndex: 1,
           }}
         >
-          <StarCanvas count={100} colors={STAR_COLORS[themeIndex]} />
+          <StarCanvas count={starCount} colors={STAR_COLORS[themeIndex]} />
         </div>
         <div
           style={{

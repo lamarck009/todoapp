@@ -21,7 +21,7 @@ export const colors = {
 
 export const STAR_COLORS: Color[][] = [
     // CLASSIC
-    [{ r: 255, g: 255, b: 255 },
+    [{ r: 55, g: 255, b: 255 },
      { r: 255, g: 255, b: 255 },
      { r: 255, g: 255, b: 255 }
     ],
@@ -78,7 +78,7 @@ export const STAR_COLORS: Color[][] = [
     // SILVER (마그네슘)
     [
       { r: 255, g: 255, b: 255 },
-      { r: 243, g: 244, b: 246 },
+      { r: 43, g: 44, b: 46 },
       { r: 209, g: 213, b: 219 }
     ]
 ];
