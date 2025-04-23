@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="800"
+   height="800"
+   viewBox="0 0 800 800"
+   fill="none"
+   version="1.1"
+   id="svg3"
+   sodipodi:docname="calendar2.svg"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3" />
+  <sodipodi:namedview
+     id="namedview3"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.729375"
+     inkscape:cx="318.76607"
+     inkscape:cy="636.84661"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg3" />
+  <g
+     id="g1">
+    <path
+       fill-rule="evenodd"
+       clip-rule="evenodd"
+       d="m 257.85861,150 c -13.807,0 -25,11.193 -25,25 v 25 h -25 c -41.42125,0 -75,33.57875 -75,75 v 350 c 0,41.4225 33.57875,75 75,75 h 202.525 c -14.6475,-14.3525 -26.7825,-31.26 -35.685,-50 h -166.84 c -13.807,0 -25,-11.1925 -25,-25 V 400 h 400 v 7.2475 c 18.06,5.375 34.9,13.5875 50,24.12 V 275 c 0,-41.42125 -33.5775,-75 -75,-75 h -25 v -25 c 0,-13.807 -11.1925,-25 -25,-25 -13.8075,0 -25,11.193 -25,25 v 25 h -200 v -25 c 0,-13.807 -11.193,-25 -25,-25 z m 225,125 v -25 h -200 v 25 c 0,13.807 -11.193,25 -25,25 -13.807,0 -25,-11.193 -25,-25 v -25 h -25 c -13.807,0 -25,11.193 -25,25 v 75 h 400 v -75 c 0,-13.807 -11.1925,-25 -25,-25 h -25 v 25 c 0,13.807 -11.1925,25 -25,25 -13.8075,0 -25,-11.193 -25,-25 z"
+       fill="#0f0f0f"
+       id="path1"
+       style="stroke-width:25" />
+    <path
+       d="m 588.64799,526.465 c 13.8075,0 25,11.1925 25,25 0,13.8075 -11.1925,25 -25,25 h -42.575 l -22,22.0025 c -9.765,9.7625 -25.5925,9.7625 -35.3575,0 -9.76251,-9.7625 -9.76251,-25.5925 0,-35.355 l 29.325,-29.325 c 5.2525,-5.2525 12.2625,-7.68 19.1375,-7.28 0.4875,-0.0275 0.9775,-0.0425 1.47,-0.0425 z"
+       fill="#0f0f0f"
+       id="path2"
+       style="stroke-width:25" />
+    <path
+       fill-rule="evenodd"
+       clip-rule="evenodd"
+       d="m 682.85861,575 c 0,82.8425 -67.1575,150 -150,150 -82.8425,0 -150,-67.1575 -150,-150 0,-82.8425 67.1575,-150 150,-150 82.8425,0 150,67.1575 150,150 z m -250.4525,0 c 0,55.4775 44.975,100.4525 100.4525,100.4525 55.4775,0 100.4525,-44.975 100.4525,-100.4525 0,-55.4775 -44.975,-100.4525 -100.4525,-100.4525 -55.4775,0 -100.4525,44.975 -100.4525,100.4525 z"
+       fill="#0f0f0f"
+       id="path3"
+       style="stroke-width:25" />
+  </g>
+</svg>

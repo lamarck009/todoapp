@@ -11,84 +11,112 @@ import { Todo } from "@/context/TodoContext"; // Todo 타입 가져오기
 
 
 const Homepage: React.FC = () => {
+  // TodoContext에서 필요한 상태와 함수들을 가져옴
   const { todos, toggleTodo, setTodos } = useTodo();
-  const router = useRouter(); // useRouter 훅 사용
-  const [hasCheckedItems, setHasCheckedItems] = useState(false); // 수정, 삭제 버튼튼
+  // 페이지 라우팅을 위한 router 객체
+  const router = useRouter();
+  // 체크된 항목이 있는지 여부를 추적하는 상태
+  const [hasCheckedItems, setHasCheckedItems] = useState(false);
 
-  
-  const handleListClick = (e: React.MouseEvent) => {
+  // 할일 항목 토글(체크/체크해제) 처리 함수
+  const handleToggle = (e: React.MouseEvent, id: string) => {
+    // 클릭된 요소가 체크박스이거나 리스트 아이템일 때만 토글
     const target = e.target as HTMLElement;
-    const listItem = target.closest("li");
-
-    if (listItem) {
-      const id = listItem.dataset.id;
-      if (id) {
+    if (target.tagName === 'INPUT' || target === e.currentTarget) {
+        e.stopPropagation(); // 이벤트 버블링 방지
         const currentTodo = todos.find((t) => t.id === id);
-        const newCheckedState = !currentTodo?.isChecked; // 새로운 체크 상태 저장
-
+        const newCheckedState = !currentTodo?.isChecked;
         toggleTodo(id);
-        listItem.style.border = newCheckedState
-          ? `2px solid ${colors.checked}`
-          : "2px solid transparent";
         const otherCheckedExists = todos.some(
-          (todo) => todo.id !== id && todo.isChecked
+            (todo) => todo.id !== id && todo.isChecked
         );
         setHasCheckedItems(newCheckedState || otherCheckedExists);
-      }
     }
+};
+
+  // 새 할일 작성 페이지로 이동하는 함수
+  const handleWriteClick = () => {
+    router.push("/write");
   };
 
-  const handleWriteClick = () => {
-    router.push("/write"); // write 페이지로 이동
+
+  // 수정 페이지로 이동하는 함수
+  const handleEditClick = (e: React.MouseEvent) => {
+    const listItem = e.currentTarget.closest('li');
+    const dataId = listItem?.getAttribute('data-id');
+    router.push(`/edit/${dataId}`);
+  };
+
+  //삭제
+  const handleDelete = (e: React.MouseEvent) => {
+    const listItem = e.currentTarget.closest('li');
+    const dataId = listItem?.getAttribute('data-id');
+    setTodos(prev => prev.filter(t => t.id !== dataId));
   };
 
   return (
     <Maincontainer>
-          <GlobalStyle />
+      {/* 전역 스타일 적용 */}
+      <GlobalStyle />
       <AppContainer>
+        {/* 헤더 영역 */}
         <Headers>
           <Title>Todo 앱 : 일정관리</Title>
         </Headers>
+        
+        {/* 버튼 컨테이너 영역 */}
         <HeaderButtonContainer>
-        <SectionButtonContainer>        
-          <SectionButton>전체</SectionButton>
-          <SectionButton>완료</SectionButton>  
-        </SectionButtonContainer>
-        <MenuButtonContainer>
-          {hasCheckedItems && (
-            <>
-              <EditButton>수정</EditButton>
-              <DeleteButton>삭제</DeleteButton>
-              <DateSetButton>일정</DateSetButton>
-            </>
-          )}
-          <AddButton onClick={handleWriteClick} />
-        </MenuButtonContainer>
+          {/* 섹션 버튼 영역 */}
+          <SectionButtonContainer>        
+            <SectionButton>전체</SectionButton>
+            <SectionButton>완료</SectionButton>  
+          </SectionButtonContainer>
+          
+          {/* 메뉴 버튼 영역 */}
+          <MenuButtonContainer>
+ 
+            <AddButton onClick={handleWriteClick} />
+          </MenuButtonContainer>
         </HeaderButtonContainer>
-        <List onClick={handleListClick}>
-        <ReactSortable
+
+        {/* 할일 목록 영역 */}
+        <List>
+          {/* ReactSortable로 드래그 앤 드롭 기능 구현 */}
+          <StyledSortable
             list={todos}
-            setList={setTodos}
-            animation={150}
-            ghostClass="sortable-ghost"
-            dragClass="sortable-drag"
-            handle=".drag-handle"
-            forceFallback={true}
-          >
+            setList={(newState) => setTodos(newState as Todo[])}
+            animation={150} // 애니메이션 지속 시간
+            ghostClass="sortable-ghost" // 드래그 시 원래 위치에 표시될 고스트 클래스
+            dragClass="sortable-drag" // 드래그 중인 항목에 적용될 클래스
+            handle=".drag-handle" // 드래그 핸들 지정
+            forceFallback={true} // 항상 폴백 사용
+            delay={100} // 드래그 시작 전 지연 시간
+            delayOnTouchOnly={true} // 터치 디바이스에서만 지연 적용
+            touchStartThreshold={5} // 터치 시작 임계값
+            >
             {todos.map((todo) => (
-              <ListItem key={todo.id} data-id={todo.id}
-              className="drag-handle"
->
+              <ListItem 
+                key={todo.id} 
+                data-id={todo.id}
+                className="drag-handle"
+                onClick={(e) => handleToggle(e, todo.id)}
+              >
                 <CheckBox
                   type="checkbox"
                   checked={todo.isChecked}
-                  onChange={() => {}}
+                  onChange={() => {}} // React 경고 방지용
                 />
                 <ListItemText>{todo.text}</ListItemText>
+                <div style={{height:"100%", display:"flex", justifyContent:"center", gap:"5px", alignItems:"center"}}>
+                <CalendarButton></CalendarButton>
+                <EditButton onClick={(e) => handleEditClick(e)}></EditButton>
+                <DeleteButton onClick={(e) => handleDelete(e)}></DeleteButton>
+                </div>
               </ListItem>
             ))}
-    </ReactSortable>
-    </List>
+          </StyledSortable>
+        </List>
+        {/* 리스트 하단 장식선 */}
         <ListUnderline />
       </AppContainer>
     </Maincontainer>
@@ -110,6 +138,11 @@ const GlobalStyle = createGlobalStyle`
 
 
 `;
+const StyledSortable = styled(ReactSortable)<{ list: Todo[] }>`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
 
 const Maincontainer = styled.div`
   display: flex;
@@ -120,6 +153,7 @@ const Maincontainer = styled.div`
   align-items: center;
   z-index: 0;
 `;
+
 const AppContainer = styled.div`
   width: 100%;
   display: flex;
@@ -148,23 +182,44 @@ const Headers = styled.header`
   border-radius: 25px 25px 0 0;
   direction: column;
 `;
+const SCROLLBAR_WIDTH = 8; // 스크롤바 너비
+const PADDING = 20; // 기본 패딩값
 
 const List = styled.ul<{ isDraggingOver?: boolean }>`
   list-style-type: none;
-  padding: 20px;
+  padding: ${PADDING}px;
+  padding-left: ${PADDING+ SCROLLBAR_WIDTH}px;
   padding-bottom: 0px;
   width: 100%;
+  max-height: 100%;
   max-width: 500px;
   flex: 1;
   background-color: ${colors.list};
-
   z-index: 2;
-  overflow-y: auto;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  overflow-y: auto; // 스크롤바 표시
+  scrollbar-gutter: stable;
 
+
+  // 선택적: 스크롤바 스타일링
+// 선택적: 스크롤바 스타일링
   &::-webkit-scrollbar {
-    display: none;
+    width: ${SCROLLBAR_WIDTH}px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
   }
 `;
 const ListUnderline = styled.div`
@@ -181,9 +236,10 @@ const ListItem = styled.li`
   background-color: white;
   margin-top: 5px;
   border-radius: 5px;
+  height: 3rem;
   border: 2px solid transparent;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   gap: 10px;
     cursor: pointer; 
@@ -191,7 +247,7 @@ const ListItem = styled.li`
   user-select: none;
   &:hover {
   cursor: pointer; 
-    background-color: #e0e0e0;
+  border: 2px solid ${colors.checked};
   }
 
 
@@ -307,8 +363,7 @@ const MenuButtonContainer = styled.div`
 `;
 
 const AddButton = styled.button`
-  background-color: red;
-  mask-image: url("asset/plus.svg"); /* SVG 파일을 마스크로 사용 */
+background-color:${colors.icon};  mask-image: url("asset/plus.svg"); /* SVG 파일을 마스크로 사용 */
   mask-size: contain; /* 마스크 크기 조절 */
   mask-repeat: no-repeat; /* 마스크 반복 없음 */
   mask-position: center; /* 마스크 위치 */
@@ -317,6 +372,7 @@ const AddButton = styled.button`
   width: 24px;
   padding: 5px;
   cursor: pointer;
+
   &:hover {
     transform: scale(1.2); // hover 시 크기 증가
     transition: transform 0.1s ease; // 부드러운 애니메이션 효과
@@ -324,41 +380,62 @@ const AddButton = styled.button`
 `;
 
 const EditButton = styled.button`
-  background-color: #28a745;
-  color: white;
-  border: none;
+  background-color:${colors.icon};
   height: 100%;
-  padding: 5px;
-  border-radius: 5px;
   cursor: pointer;
+  mask-image: url("asset/edit.svg"); 
+  mask-size: contain;
+  mask-repeat: no-repeat; /* 마스크 반복 없음 */
+  mask-position: center; /* 마스크 위치 */
+  border: none; // 버튼 테두리 제거
+    aspect-ratio: 1; // 정사각형 비율 유지
+  transform:scale(1.3);
 
   &:hover {
-    background-color: #218838;
+    filter: brightness(1.2); // 밝기 조절
+      mask-image: url("asset/edit2.svg"); 
+
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: #dc3545;
-  color: white;
-  border: none;
+  background-color:${colors.icon};  color: white;
   height: 100%;
-  padding: 5px;
-  border-radius: 5px;
   cursor: pointer;
+  mask-image: url("asset/close-trashcan.svg"); 
+  mask-size: contain;
+  mask-repeat: no-repeat; /* 마스크 반복 없음 */
+  mask-position: center; /* 마스크 위치 */
+  border: none; // 버튼 테두리 제거
+  aspect-ratio: 1; // 정사각형 비율 유지
+  transform:scale(1.3);
+
+
   &:hover {
-    background-color: #c82333;
+    filter: brightness(1.2); // 밝기 조절
+    mask-image: url("asset/open-trashcan.svg"); 
   }
+  
 `;
-const DateSetButton = styled.button`
-  background-color: #17a2b8;
-  color: white;
-  border: none;
+const CalendarButton = styled.button`
+    background-color:${colors.icon};  
+    color: white;
   height: 100%;
-  padding: 5px;
-  border-radius: 5px;
   cursor: pointer;
+  mask-image: url("asset/calendar.svg"); 
+  mask-size: contain;
+  mask-repeat: no-repeat; /* 마스크 반복 없음 */
+  mask-position: center; /* 마스크 위치 */
+  border: none; // 버튼 테두리 제거
+    aspect-ratio: 1; // 정사각형 비율 유지
+    transform:scale(1.3);
+
   &:hover {
-    background-color: #138496;
+    filter: brightness(1.2); // 밝기 조절
+  mask-image: url("asset/calendar2.svg"); 
+
+}
+
   }
 `;
 export default Homepage;

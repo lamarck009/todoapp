@@ -1,11 +1,11 @@
 import Image from "next/image";
 import styles from "./page.module.css";
-import Write from "@/component/write";
+import Edit from "@/component/edit";
 
-export default function Writepage() {
+export default function Editpage() {
   return (
     <>
-    <Write />
+    <Edit />
     </>
   );
 }

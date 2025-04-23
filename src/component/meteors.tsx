@@ -13,6 +13,19 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
   const colorsRef = useRef(colors); // 색상을 위한 ref 추가
   const countRef = useRef(count); //개수를 위한 ref
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    setCanvasSize();
+  }, []); 
 
   const drawStar = ({ ctx, x, y, size, spikes = 5 }: StarDrawParams) => {
     let rotation = (Math.PI / 2) * 3;
@@ -55,6 +68,9 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
     }
   };
 
+  
+
+
   // 별 생성 함수를 별도로 정의
   const createMeteor = (canvas: HTMLCanvasElement) => {
     const size = Math.random() * 4 + 1;
@@ -70,7 +86,7 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
       glowColor: colorsRef.current[1],
       starColor: colorsRef.current[2],
       angle: ((42 + Math.random() * 4) * Math.PI) / 180,
-      maxTailLength: 50 + size * 15,
+      maxTailLength: 100 + size * 10,
     };
   };
 
@@ -107,21 +123,6 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
 
 
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
-
-    const setCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    setCanvasSize();
-
-
-  }, []); 
 
   
   // 속도 변경을 감지하여 별들의 속도만 업데이트
@@ -168,7 +169,7 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
         // 꼬리 업데이트
         meteor.tail.unshift({ x: meteor.x, y: meteor.y });
         if (meteor.tail.length > currentMaxLength) {
-          meteor.tail.length = currentMaxLength; // 꼬리 길이 조절
+          meteor.tail = meteor.tail.slice(0, currentMaxLength); // slice를 사용하여 꼬리 길이 조절
         }
 
         if (meteor.tail.length > 1) {
