@@ -9,14 +9,20 @@ import { useTodo } from "@/context/TodoContext"; // TodoContext에서 useTodo �
 import { ReactSortable, Sortable, Store } from "react-sortablejs";
 import { Todo } from "@/context/TodoContext"; // Todo 타입 가져오기
 import { ItemInterface } from "react-sortablejs";
+import { DEFAULT_TODOS, DEFAULT_TODO_ID } from "@/constants/defaultTodos";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+
 
 const Homepage: React.FC = () => {
   // TodoContext에서 필요한 상태와 함수들을 가져옴
-  const { todos, toggleTodo, setTodos } = useTodo();
+  const { todos, toggleTodo, setTodos, deleteTodo } = useTodo();
   // 페이지 라우팅을 위한 router 객체
   const router = useRouter();
   // 체크된 항목이 있는지 여부를 추적하는 상태
   const [hasCheckedItems, setHasCheckedItems] = useState(false);
+
+// 컴포넌트 마운트 시 todos 로드
 
   // 할일 항목 토글(체크/체크해제) 처리 함수
   const handleToggle = (e: React.MouseEvent, id: string) => {
@@ -47,13 +53,21 @@ const Homepage: React.FC = () => {
   };
 
   //삭제
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
     const listItem = e.currentTarget.closest("li");
     const dataId = listItem?.getAttribute("data-id");
-    setTodos((prev) => prev.filter((t) => t.id !== dataId));
+    
+    if (dataId) {
+      try {
+        await deleteTodo(dataId); // context의 deleteTodo 함수 호출
+      } catch (error) {
+        console.error('삭제 실패:', error);
+      }
+    }
   };
 
-  const handleSetList = (newState: ItemInterface[]) => {
+  const handleSetList = async (newState: ItemInterface[]) => {
     const updatedTodos = newState.map((item) => {
       const existingTodo = todos.find((todo) => todo.id === item.id);
       return {
@@ -65,8 +79,73 @@ const Homepage: React.FC = () => {
         filtered: false,
       } as Todo;
     });
+  
+    // 상태 업데이트
     setTodos(updatedTodos);
+  
+    // JSON 파일 업데이트
+    try {
+      const response = await fetch(`${API_URL}/api/todos`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reorder',
+          updatedTodos: updatedTodos
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update todos order');
+      }
+    } catch (error) {
+      console.error('Failed to save todo order:', error);
+      setTodos(todos); // 에러 발생 시 원래 순서로 되돌리기
+    }
   };
+  
+  // 저장된 todos를 로드하는 함수 수정
+  const loadSavedTodos = async () => {
+    try {
+      const response = await fetch(`${API_URL}/data/todos.json`);
+      if (!response.ok) {
+        setTodos(DEFAULT_TODOS);
+        return;
+      }
+      const data = await response.json();
+      console.log("받아온 데이터:", data.todos); // 원본 데이터 확인
+
+      
+    // 데이터가 있고 실제 할일이 있는 경우에만 해당 데이터 사용
+    if (data.todos && data.todos.length > 0) {
+      const realTodos = data.todos.filter((todo: Todo) => todo.id !== DEFAULT_TODO_ID);
+      console.log("필터링 후 데이터:", realTodos); // 필터링 된 데이터 확인
+      console.log("DEFAULT_TODO_ID:", DEFAULT_TODO_ID); // 디폴트 ID 확인
+      if (realTodos.length > 0) {
+        setTodos(realTodos);
+        return;
+      }
+      else
+      console.log("realTodos가 비어있음");
+
+      setTodos(DEFAULT_TODOS);
+    }
+    
+    // 실제 할일이 없는 경우에만 DEFAULT_TODOS 사용
+    
+    } catch (error) {
+      console.error('Failed to load saved todos:', error);
+      setTodos(DEFAULT_TODOS);
+    }
+  };
+  
+  // useEffect 수정
+  useEffect(() => {
+    loadSavedTodos();
+  }, []);
+  
+
 
   return (
     <Maincontainer>
@@ -96,7 +175,6 @@ const Homepage: React.FC = () => {
         <List>
           {/* ReactSortable로 드래그 앤 드롭 기능 구현 */}
           <StyledSortable
-            key={todos.length}
             list={todos}
             setList={handleSetList}
             animation={150}

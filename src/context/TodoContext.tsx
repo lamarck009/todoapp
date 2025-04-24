@@ -1,8 +1,10 @@
 //todoContext.tsx
 "use client";
 import { nanoid } from "nanoid";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { ItemInterface } from "react-sortablejs";
+import { DEFAULT_TODOS, DEFAULT_TODO_ID } from "@/constants/defaultTodos";
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 // Todo 아이템의 타입 정의
 export interface Todo extends ItemInterface {
@@ -31,44 +33,96 @@ const TodoContext = createContext<TodoContextType | undefined>(undefined);
 // TodoProvider 컴포넌트 정의
 export function TodoProvider({ children }: { children: React.ReactNode }) {
   // todos 상태와 setter 함수 정의
-  const [todos, setTodos] = useState<Todo[]>([
-    {
-      id: "1",
-      text: "할일",
-      isChecked: false,
-      chosen: false,
-      selected: false,
-      filtered: false,
-    },
-    {
-      id: "2",
-      text: "할일2",
-      isChecked: false,
-      chosen: false,
-      selected: false,
-      filtered: false,
-    },
-    {
-      id: "3",
-      text: "할일3",
-      isChecked: false,
-      chosen: false,
-      selected: false,
-      filtered: false,
-    },
-  ]);
+  const [todos, setTodos] = useState<Todo[]>([]);
 
-  // 새로운 할일을 추가하는 함수
-  const addTodo = (text: string) => {
+  useEffect(() => {
+    const loadTodos = async () => {
+      try {
+        const response = await fetch(`${baseURL}/data/todos.json`);
+        const data = await response.json();
+  
+        if (!data.todos || data.todos.length === 0) {
+          setTodos(DEFAULT_TODOS);
+        } else {
+          // 디폴트 항목이 아닌 실제 할일만 필터링
+          const realTodos = data.todos.filter((todo: Todo) => todo.id !== DEFAULT_TODO_ID);
+          
+          // 실제 할일이 있는 경우에만 해당 할일들을 설정
+          setTodos(realTodos.length > 0 ? realTodos : DEFAULT_TODOS);
+        }
+      } catch (error) {
+        console.error("할일 목록을 불러오는데 실패했습니다:", error);
+        setTodos(DEFAULT_TODOS);
+      }
+    };
+  
+    loadTodos();
+  }, []);
+
+  const addTodo = async (text: string) => {
     const newTodo: Todo = {
-      id: nanoid(), // nanoid를 사용하여 고유한 ID 생성
+      id: nanoid(),
       text,
       isChecked: false,
-      chosen: false,
-      selected: false,
-      filtered: false,
     };
-    setTodos((prev) => [...prev, newTodo]);
+    
+    try {
+      const response = await fetch(`${baseURL}/api/todos`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          action: 'add',
+          newTodo 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      // 성공적으로 API 호출이 완료된 후에 상태 업데이트
+      setTodos(prev => 
+        prev.length === 1 && prev[0].id === DEFAULT_TODO_ID 
+          ? [newTodo] 
+          : [...prev, newTodo]
+      );
+    } catch (error) {
+      console.error('할일 추가 중 에러 발생:', error);
+      // 에러 발생 시 사용자에게 알림을 표시하거나 다른 에러 처리를 수행할 수 있습니다.
+    }
+  };
+
+  const deleteTodo = async (id: string) => {
+    const updatedTodos = todos.filter((todo) => todo.id !== id);
+    // 모든 실제 할일이 삭제된 경우 디폴트 항목 추가
+    if (updatedTodos.length === 0) {
+      setTodos(DEFAULT_TODOS);
+    } else {
+      setTodos(updatedTodos);
+    }
+
+    try {
+      const response = await fetch(`${baseURL}/api/todos`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "delete",
+          id,
+        }),
+      });
+
+      if (!response.ok) throw new Error("삭제 실패");
+    } catch (error) {
+      console.error("삭제 중 에러 발생:", error);
+    }
+  };
+
+  const deleteSelected = () => {
+    setTodos((prev) => prev.filter((todo) => !todo.isChecked));
   };
 
   const toggleTodo = (id: string) => {
@@ -77,14 +131,6 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
         todo.id === id ? { ...todo, isChecked: !todo.isChecked } : todo
       )
     );
-  };
-
-  //일괄 삭제 함수
-  const deleteSelected = () => {
-    setTodos((prev) => prev.filter((todo) => !todo.isChecked));
-  };
-  const deleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
   };
 
   // Context Provider로 자식 컴포넌트들을 감싸서 todos와 addTodo를 전달
