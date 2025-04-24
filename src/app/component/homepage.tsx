@@ -38,6 +38,20 @@ const Homepage: React.FC = () => {
     }
   };
 
+  const handleSetList = (newState: Todo[]) => {
+    // 기존 todos의 isChecked 상태를 보존하면서 새로운 순서 적용
+    console.log('New state:', newState); // 디버깅용
+
+    const updatedTodos = newState.map(newTodo => {
+      const existingTodo = todos.find(todo => todo.id === newTodo.id);
+      return {
+        ...newTodo,
+        isChecked: existingTodo ? existingTodo.isChecked : false
+      };
+    });
+    setTodos(updatedTodos);
+  };
+
   const handleWriteClick = () => {
     router.push("/write"); // write 페이지로 이동
   };
@@ -68,12 +82,16 @@ const Homepage: React.FC = () => {
         <List onClick={handleListClick}>
         <ReactSortable
             list={todos}
-            setList={setTodos}
+            setList={handleSetList}
             animation={150}
             ghostClass="sortable-ghost"
             dragClass="sortable-drag"
             handle=".drag-handle"
             forceFallback={true}
+            draggable=".drag-handle"
+            group="todos"
+            delayOnTouchOnly={true}
+            delay={100}
           >
             {todos.map((todo) => (
               <ListItem key={todo.id} data-id={todo.id}
