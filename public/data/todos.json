@@ -1,8 +1,16 @@
 {
   "todos": [
     {
-      "id": "DEFAULT_EXAMPLE_ITEM",
-      "text": "예시 : 할일을 추가하면 사라집니다.",
+      "id": "kEUOu33nfDdT0xhWZH5ID",
+      "text": "1",
+      "isChecked": false,
+      "chosen": false,
+      "selected": false,
+      "filtered": false
+    },
+    {
+      "id": "zqrEZr9iijZQfIegv7mUA",
+      "text": "2",
       "isChecked": false,
       "chosen": false,
       "selected": false,
