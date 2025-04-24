@@ -3,7 +3,7 @@
 import styled from "@emotion/styled";
 import { colors } from "@/styles/theme"; // colors.ts에서 colors 가져오기
 import { createGlobalStyle } from "styled-components"; // createGlobalStyle 가져오기
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation"; // useRouter 훅 가져오기
 import { useTodo } from "@/context/TodoContext"; // TodoContext에서 useTodo 훅 가져오기
 import { ReactSortable, Sortable, Store } from "react-sortablejs";
@@ -21,6 +21,8 @@ const Homepage: React.FC = () => {
   const router = useRouter();
   // 체크된 항목이 있는지 여부를 추적하는 상태
   const [hasCheckedItems, setHasCheckedItems] = useState(false);
+  const isInitialMount = useRef(true);  // 초기화 플래그 생성
+
 
 // 컴포넌트 마운트 시 todos 로드
 
@@ -70,6 +72,7 @@ const Homepage: React.FC = () => {
   const handleSetList = async (newState: ItemInterface[]) => {
     const updatedTodos = newState.map((item) => {
       const existingTodo = todos.find((todo) => todo.id === item.id);
+
       return {
         id: item.id,
         text: (item as Todo).text,
@@ -80,11 +83,11 @@ const Homepage: React.FC = () => {
       } as Todo;
     });
   
-    // 상태 업데이트
     setTodos(updatedTodos);
   
     // JSON 파일 업데이트
     try {
+
       const response = await fetch(`${API_URL}/api/todos`, {
         method: 'PATCH',
         headers: {
@@ -95,12 +98,12 @@ const Homepage: React.FC = () => {
           updatedTodos: updatedTodos
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to update todos order');
       }
     } catch (error) {
-      console.error('Failed to save todo order:', error);
+      console.error("7. 에러 발생:", error);
       setTodos(todos); // 에러 발생 시 원래 순서로 되돌리기
     }
   };
@@ -114,21 +117,15 @@ const Homepage: React.FC = () => {
         return;
       }
       const data = await response.json();
-      console.log("받아온 데이터:", data.todos); // 원본 데이터 확인
-
       
     // 데이터가 있고 실제 할일이 있는 경우에만 해당 데이터 사용
     if (data.todos && data.todos.length > 0) {
       const realTodos = data.todos.filter((todo: Todo) => todo.id !== DEFAULT_TODO_ID);
-      console.log("필터링 후 데이터:", realTodos); // 필터링 된 데이터 확인
-      console.log("DEFAULT_TODO_ID:", DEFAULT_TODO_ID); // 디폴트 ID 확인
       if (realTodos.length > 0) {
         setTodos(realTodos);
         return;
       }
       else
-      console.log("realTodos가 비어있음");
-
       setTodos(DEFAULT_TODOS);
     }
     
@@ -176,7 +173,14 @@ const Homepage: React.FC = () => {
           {/* ReactSortable로 드래그 앤 드롭 기능 구현 */}
           <StyledSortable
             list={todos}
-            setList={handleSetList}
+            setList={(newState) => {
+              if (isInitialMount.current) {  // 최초 마운트인 경우
+                isInitialMount.current = false;  // 플래그를 false로 변경
+                return;  // 함수 실행 중단  
+                }
+                // 이후의 호출에서만 실제 로직 실행
+                handleSetList(newState);
+              }}
             animation={150}
             ghostClass="sortable-ghost"
             dragClass="sortable-drag"

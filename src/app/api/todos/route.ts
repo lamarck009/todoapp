@@ -37,6 +37,7 @@ export async function PATCH(request: Request) {
         break;
         case 'reorder':
           // 실제 할일이 있는 경우에만 순서 업데이트
+
           if (data.updatedTodos && data.updatedTodos.length > 0) {
             currentData.todos = data.updatedTodos;
           }
