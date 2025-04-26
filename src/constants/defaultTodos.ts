@@ -11,5 +11,6 @@ export const DEFAULT_TODOS: Todo[] = [
     chosen: false,
     selected: false,
     filtered: false,
+    author: "익명"
   }
 ];

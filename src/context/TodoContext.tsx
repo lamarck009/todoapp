@@ -10,6 +10,7 @@ const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 export interface Todo extends ItemInterface {
   id: string;
   text: string;
+  author: string;
   isChecked: boolean;
   // Sortable.js에서 사용하는 선택적 필드들
   chosen?: boolean;
@@ -60,13 +61,24 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addTodo = async (text: string) => {
+    const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+    console.log('1. 유저 프로필:', userProfile);
+
     const newTodo: Todo = {
       id: nanoid(),
       text,
+      author: userProfile.nickname || "익명", // 닉네임이 없을 경우 "익명"으로 표시
       isChecked: false,
     };
-    
+    console.log('2. 새로운 Todo:', newTodo);
+
     try {
+      const requestBody = {
+        action: 'add',
+        newTodo
+      };
+      console.log('3. 요청 데이터:', requestBody);
+
       const response = await fetch(`${baseURL}/api/todos`, {
         method: 'PATCH',
         headers: {
@@ -77,17 +89,24 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
           newTodo 
         })
       });
-      
+      console.log('4. 응답 상태:', response.status);
+      const responseData = await response.json();
+      console.log('5. 응답 데이터:', responseData);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
   
       // 성공적으로 API 호출이 완료된 후에 상태 업데이트
-      setTodos(prev => 
-        prev.length === 1 && prev[0].id === DEFAULT_TODO_ID 
+      
+
+      setTodos(prev => {
+        const newTodos = prev.length === 1 && prev[0].id === DEFAULT_TODO_ID 
           ? [newTodo] 
-          : [...prev, newTodo]
-      );
+          : [...prev, newTodo];
+        console.log('6. 업데이트된 todos:', newTodos);
+        return newTodos;
+      });
+
     } catch (error) {
       console.error('할일 추가 중 에러 발생:', error);
       // 에러 발생 시 사용자에게 알림을 표시하거나 다른 에러 처리를 수행할 수 있습니다.

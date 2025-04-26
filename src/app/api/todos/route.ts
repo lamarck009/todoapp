@@ -7,15 +7,22 @@ import { DEFAULT_TODOS, DEFAULT_TODO_ID } from '@/constants/defaultTodos';
 export async function PATCH(request: Request) {
   try {
     const data = await request.json();
+    console.log('1. 받은 데이터:', data);
+
     const filePath = path.join(process.cwd(), 'public', 'data', 'todos.json');
-    
+    console.log('2. 파일 경로:', filePath);
+
     // 파일이 존재하는지 확인
     let currentData = { todos: DEFAULT_TODOS };
     try {
       const fileContent = await readFile(filePath, 'utf-8');
       currentData = JSON.parse(fileContent);
+      console.log('3. 현재 저장된 데이터:', currentData);
+
     } catch (error) {
       // 파일이 없거나 읽을 수 없는 경우 기본값 사용
+      console.error('4. 파일 읽기 에러:', error);
+
     }
 
     switch (data.action) {

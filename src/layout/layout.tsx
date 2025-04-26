@@ -9,9 +9,6 @@ import Controls from '@/component/Controls';
 
 const Layout = React.memo<LayoutProps>(({ children }) => {
     const { starCount, starspeed, themeIndex } = useStarContext();
-  
-  // 테마 색상 설정 (예시)
-
 
   return (
     <LayoutWrapper>
@@ -20,7 +17,6 @@ const Layout = React.memo<LayoutProps>(({ children }) => {
         colors={STAR_COLORS[themeIndex].colors}  // .colors로 접근
         starspeed={starspeed}
       />
-     
       <ContentWrapper>
       <Controls />
         {children}

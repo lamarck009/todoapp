@@ -1,20 +1,36 @@
 {
   "todos": [
     {
-      "id": "kEUOu33nfDdT0xhWZH5ID",
-      "text": "1",
+      "id": "byzsfzEfIQ1HG0Th_MEhc",
+      "text": "현재 진행 사항",
+      "author": "기본",
       "isChecked": false,
       "chosen": false,
-      "selected": false,
-      "filtered": false
+      "selected": false
     },
     {
-      "id": "zqrEZr9iijZQfIegv7mUA",
-      "text": "2",
+      "id": "Dsvckk19nfpu4rl-orwAh",
+      "text": "user프로필 부분 추가",
+      "author": "기본",
       "isChecked": false,
       "chosen": false,
-      "selected": false,
-      "filtered": false
+      "selected": false
+    },
+    {
+      "id": "TEqVnCo0ARbdSiYPGTJGX",
+      "text": "그에 받게 저장되는 json 배열에",
+      "author": "기본",
+      "isChecked": false,
+      "chosen": false,
+      "selected": false
+    },
+    {
+      "id": "t4rkTBOd_l6-3FPoppN1f",
+      "text": "author 부분 추가(닉네임 기반)",
+      "author": "기본",
+      "isChecked": false,
+      "chosen": false,
+      "selected": false
     }
   ]
 }

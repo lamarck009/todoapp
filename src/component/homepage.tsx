@@ -10,6 +10,7 @@ import { ReactSortable, Sortable, Store } from "react-sortablejs";
 import { Todo } from "@/context/TodoContext"; // Todo 타입 가져오기
 import { ItemInterface } from "react-sortablejs";
 import { DEFAULT_TODOS, DEFAULT_TODO_ID } from "@/constants/defaultTodos";
+import { FaUser } from "react-icons/fa";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 
@@ -74,12 +75,7 @@ const Homepage: React.FC = () => {
       const existingTodo = todos.find((todo) => todo.id === item.id);
 
       return {
-        id: item.id,
-        text: (item as Todo).text,
-        isChecked: existingTodo ? existingTodo.isChecked : false,
-        chosen: false,
-        selected: false,
-        filtered: false,
+        ...existingTodo, 
       } as Todo;
     });
   
@@ -152,6 +148,9 @@ const Homepage: React.FC = () => {
         {/* 헤더 영역 */}
         <Headers>
           <Title>Todo 앱 : 일정관리</Title>
+          <UserIcon onClick={() => router.push("/auth")}>
+            <FaUser size={20} />
+          </UserIcon>
         </Headers>
 
         {/* 버튼 컨테이너 영역 */}
@@ -224,6 +223,11 @@ const Homepage: React.FC = () => {
   );
 };
 
+//글로벌 변수
+const SCROLLBAR_WIDTH = 8; // 스크롤바 너비
+const Basic_Padding = 20; // 기본 패딩값
+const P_S_Padding = Basic_Padding + SCROLLBAR_WIDTH;
+
 const GlobalStyle = createGlobalStyle`
  .sortable-ghost {
     opacity: 0.5;  // 원래 위치에 남는 고스트 이미지는 완전히 불투명하게
@@ -267,29 +271,27 @@ const AppContainer = styled.div`
 
 const Title = styled.h1`
   font-size: 2em;
-  text-align: center;
   color: white;
   text-shadow: 1px 1px 2px #000;
 `;
 const Headers = styled.header`
   display: flex;
   position: relative;
-  justify-content: center;
+  justify-content: center; // 중앙 정렬을 위해 변경
   align-items: center;
   background-color: ${colors.head};
   color: white;
   width: 100%;
   height: 70px;
   border-radius: 25px 25px 0 0;
-  direction: column;
+  padding: ${Basic_Padding}px;
 `;
-const SCROLLBAR_WIDTH = 8; // 스크롤바 너비
-const PADDING = 20; // 기본 패딩값
+
 
 const List = styled.ul<{ isDraggingOver?: boolean }>`
   list-style-type: none;
-  padding: ${PADDING}px;
-  padding-left: ${PADDING + SCROLLBAR_WIDTH}px;
+  padding: ${Basic_Padding}px;
+  padding-left: ${P_S_Padding}px;
   padding-bottom: 0px;
   width: 100%;
   max-height: 100%;
@@ -534,4 +536,22 @@ const CalendarButton = styled.button`
 
   }
 `;
+
+const UserIcon = styled.div`
+  position: absolute;
+  right: ${P_S_Padding}px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  mask-size: contain;
+  transform: scale(1.3);
+  justify-content: center;
+  &:hover {
+   transform: scale(1.5);
+   opacity : 0.8;
+   transition:all ease-in 0.2s;
+  
+  }
+`;
+
 export default Homepage;
