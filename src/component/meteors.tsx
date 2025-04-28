@@ -128,7 +128,11 @@ export default function StarCanvas({ count = 100, colors, starspeed = 2}: StarCa
   // 속도 변경을 감지하여 별들의 속도만 업데이트
   useEffect(() => {
     meteorsRef.current.forEach(meteor => {
-      meteor.speed = Math.random() * 0.5 + starspeed;
+      if(starspeed===0){
+        meteor.speed = 0  
+      }
+    else{
+      meteor.speed = Math.random() * 0.5 + starspeed;}
     });
   }, [starspeed]);
 

@@ -1,46 +1,61 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "@emotion/styled";
 import { colors } from "@/styles/theme"; // colors.ts에서 colors 가져오기
 import { useTodo } from "@/context/TodoContext"; // TodoContext에서 useTodo 훅 가져오기
 
-interface WriteProps {
+interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
+  todoId: string | null;
 }
-
-export default function Write({ isOpen, onClose }: WriteProps) {
-  const router = useRouter(); // useRouter 훅 사용
-  const [text, setText] = useState(""); // 입력된 텍스트 상태 관리
+const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, todoId }) => {
+  const { todos, setTodos } = useTodo();
+  const [editText, setEditText] = useState("");
   const [status, setStatus] = useState("todo");
   const [priority, setPriority] = useState("low");
-  const { addTodo } = useTodo();
+  const todo = todos.find((t) => t.id === todoId);
+
+  useEffect(() => {
+    if (todo) {
+      setEditText(todo.text);
+      setStatus(todo.status);
+      setPriority(todo.priority);
+    }
+  }, [todo]);
 
   const handleSubmit = () => {
-    if (text.trim()) {
-      addTodo(text, priority, status);
-      setText(""); // 입력 초기화
-      onClose(); // 모달 닫기
+    if (!editText.trim()) {
+      alert("내용을 입력해주세요");
+      return;
+    }
+    if (todo) {
+      const newTodos = [...todos];
+      newTodos[todos.indexOf(todo)] = {
+        ...todo,
+        text: editText,
+        status: status,
+        priority: priority,
+      };
+      setTodos(newTodos);
+      onClose();
     }
   };
 
   if (!isOpen) return null;
 
-
   return (
-    <>
-      <ModalOverlay>
-        <WriteContainer>
-          <Title>글쓰기</Title>
+    <ModalOverlay>
+      <WriteContainer>
+        <Title>수정</Title>
         <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
           placeholder="내용을 입력하세요"
         />
-          <ButtonGroup>
+        <ButtonGroup>
           <ButtonContainer1>
-            <span style={{whiteSpace:"nowrap" }}>우선 순위 : </span>
+            <span style={{ whiteSpace: "nowrap" }}>우선 순위 : </span>
             <PriorityButton
               onClick={() => setPriority("low")}
               isSelected={priority === "low"}
@@ -59,18 +74,16 @@ export default function Write({ isOpen, onClose }: WriteProps) {
             >
               높음
             </PriorityButton>
-            </ButtonContainer1>
-            <ButtonContainer2>
+          </ButtonContainer1>
+          <ButtonContainer2>
             <DoneButton onClick={handleSubmit}>완료</DoneButton>
             <CancelButton onClick={onClose}>취소</CancelButton>
           </ButtonContainer2>
-          </ButtonGroup>
-          
-        </WriteContainer>
-        </ModalOverlay>
-        </>
+        </ButtonGroup>
+      </WriteContainer>
+    </ModalOverlay>
   );
-}
+};
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -92,23 +105,23 @@ const Title = styled.h1`
 `;
 
 const WriteContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 800px;
-    height: auto;
-    padding: 20px;
-    background-color: ${colors.list};
-      border-radius: 8px;
-    animation: slideIn 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 800px;
+  height: auto;
+  padding: 20px;
+  background-color: ${colors.list};
+  border-radius: 8px;
+  animation: slideIn 0.3s ease-out;
 
-    color: white;
-    font-family: 'Geist', sans-serif;
-    font-size: 1.5em;
-    text-align: center;
+  color: white;
+  font-family: "Geist", sans-serif;
+  font-size: 1.5em;
+  text-align: center;
 
-    @keyframes slideIn {
+  @keyframes slideIn {
     from {
       transform: translateY(-20px);
       opacity: 0;
@@ -120,22 +133,21 @@ const WriteContainer = styled.div`
   }
 `;
 
-const ButtonGroup = styled.div`         
- display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 700px;
-    max-width: 700px;
-    padding: 10px;
-    heihgt: fit-content;
-    background-color: rgba(0,0,0,0.5);
-    color: white;
-    border-radius:8px;
-    text-align: center;
-      font-size: 1em;
-      gap:10px;
-
-    `;
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 700px;
+  max-width: 700px;
+  padding: 10px;
+  heihgt: fit-content;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1em;
+  gap: 10px;
+`;
 
 const PriorityButton = styled.button<{ isSelected: boolean }>`
   background-color: ${colors.btno};
@@ -147,14 +159,14 @@ const PriorityButton = styled.button<{ isSelected: boolean }>`
   font-size: 1em;
   white-space: nowrap;
   background-color: ${(props) =>
-  props.isSelected ? `${colors.btok}` : "gray"};
+    props.isSelected ? `${colors.btok}` : "gray"};
   color: ${(props) => (props.isSelected ? "white" : "#4A5568")};
 
   &:hover {
     background-color: ${colors.hover};
   }
 
-    &.high {
+  &.high {
     background-color: red;
   }
 
@@ -218,3 +230,5 @@ const ButtonContainer1 = styled.div`
   gap: 10px;
   width: 100%;
 `;
+
+export default EditModal;

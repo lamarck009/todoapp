@@ -1,5 +1,6 @@
 //theme.ts
 export const colors = {
+    a: 'var(--primary-color)',
     primary: ' #4cc35b',
     back: `
         radial-gradient(ellipse at 50% 50%, rgb(0, 31, 13) 30%, transparent 80%),
@@ -7,10 +8,11 @@ export const colors = {
         radial-gradient(ellipse at 0% 0%, rgb(0, 0, 32) 0%, transparent 70%),
         rgb(0, 3, 44)
     `,
-    border: '#bebebe',
-    head:' #4399C8',
-    head2:'rgb(255, 255, 255)',
-    list:'rgb(215, 236, 248)',
+    border: ' #bebebe',
+    head:'var(--head-color)',
+    head2:'var(--head-color2)',
+    list:'var(--list-color)',
+    write:'#d7ecf8',
     hr: 'linear-gradient(to right, #00c6ff, #0072ff)',
     hover: '#e0e0e0',
     checked: '#1976D2',
@@ -18,6 +20,7 @@ export const colors = {
     btok: '#4caf50',
     btno: '#f44336',
     icon: '#0070f3',
+    
 } as const;
 
 // 테마 정보를 포함하는 인터페이스 추가

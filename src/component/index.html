@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Maincontainer, AppContainer와 매칭 -->
+  <div class="container">
+
+    <!-- Headers 컴포넌트와 매칭 -->
+    <!-- UserIcon 컴포넌트도 여기에 해당 -->
+    <div class="profile">
+      <img src="https://via.placeholder.com/50" alt="Profile Picture">
+      <span id="username">User</span>
+      <button id="toggle-darkmode">🌙</button>
+    </div>
+
+    <!-- Title 컴포넌트와 매칭 -->
+    <h1>My Todo List</h1>
+
+    <!-- HeaderButtonContainer, SectionButtonContainer와 매칭 -->
+    <div class="category-section">
+      <button id="filter-all">All</button>
+      <button id="filter-todo">To-Do</button>
+      <button id="filter-progress">Progress</button>
+      <button id="filter-done">Done</button>
+    </div>
+
+    <!-- 현재 Homepage.tsx에는 없는 기능 -->
+    <div class="sort-section">
+      <button id="sort-priority">중요도순 정렬</button>
+      <button id="sort-date">날짜순 정렬</button>
+    </div>
+
+    <!-- 현재 Homepage.tsx에는 없는 기능 -->
+    <div class="priority-section">
+      <select id="priority-select">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+
+    <!-- 팝업으로 해결해야겠다. 돋보기 추가가 -->
+    <!-- MenuButtonContainer의 AddButton과 유사한 기능 -->
+    <div class="input-section">
+      <input id="todo-input" type="text" placeholder="할 일을 입력하세요">
+      <button id="add-btn">추가</button>
+    </div>
+
+    <!-- 현재 Homepage.tsx에는 없는 기능 -->
+    <div class="search-section">
+      <input id="search-input" type="text" placeholder="할 일을 검색하세요...">
+    </div>
+
+    <!-- List, ListItem 컴포넌트와 매칭 -->
+    <!-- ReactSortable로 구현된 드래그 앤 드롭 기능은 현재 HTML에는 없음 -->
+    <ul id="todo-list"></ul>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -11,6 +11,8 @@ export const DEFAULT_TODOS: Todo[] = [
     chosen: false,
     selected: false,
     filtered: false,
-    author: "익명"
+    author: "익명",
+    status: "todo",    // 'todo', 'progress', 'done'
+    priority: 'low'  // 'low', 'medium', 'high'
   }
 ];

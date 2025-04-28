@@ -114,7 +114,7 @@ const Auth = () => {
 const Container = styled.div`
   max-width: 600px;
   margin: 60px auto;
-  background-color: rgb(215, 236, 248);
+  background-color: var(--list-color);
   border-radius: 25px;
 `;
 
@@ -126,14 +126,14 @@ const Title = styled.h2`
   justify-content: center;
   color: white;
   text-shadow: 1px 1px 2px #000;
-  background-color: #4399C8;
+  background-color: var(--head-color);
   border-radius: 25px 25px 0 0;
   width: 100%;
   height: 100px;
 `;
 
 const ProfileItems = styled.div`
-  background-color: rgb(215, 236, 248);
+  background-color: var(--list-color);
   padding:10px;
 `;
 
@@ -152,6 +152,8 @@ const ProfileItem = styled.div`
 const Label = styled.label`
   width: 100px;
   font-weight: bold;
+    color : black;
+
 `;
 
 const ErrorMessage = styled.div`
@@ -163,6 +165,7 @@ const ErrorMessage = styled.div`
 
 const Value = styled.span`
   flex: 1;
+  color: black;
 `;
 
 const Input = styled.input`

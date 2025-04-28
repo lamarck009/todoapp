@@ -9,9 +9,11 @@ const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 // Todo 아이템의 타입 정의
 export interface Todo extends ItemInterface {
   id: string;
-  text: string;
-  author: string;
-  isChecked: boolean;
+  text: string; //내용용
+  author: string; //작성자
+  isChecked: boolean; 
+  status: string;    // 'todo', 'progress', 'done'
+  priority: string;  // 'low', 'medium', 'high'
   // Sortable.js에서 사용하는 선택적 필드들
   chosen?: boolean;
   selected?: boolean;
@@ -21,11 +23,12 @@ export interface Todo extends ItemInterface {
 // TodoContext에서 사용할 타입 정의
 interface TodoContextType {
   todos: Todo[]; // 할일 목록을 저장할 배열
-  addTodo: (text: string) => void; // 할일을 추가하는 함수
+  addTodo: (text: string, status: string, priority: string) => void; // 할일을 추가하는 함수
   toggleTodo: (id: string) => void; // 할일의 체크 상태를 토글하는 함수
   setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
   deleteTodo: (id: string) => void;
-  deleteSelected: () => void; // 선택된 항목들 삭제 함수
+  deleteSelected: () => void; // 선택된 항목들 삭제 함수  
+  toggleStatus: (id: string) => void; // 진행도 토글
 }
 
 // TodoContext 생성 (초기값은 undefined)
@@ -60,25 +63,21 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     loadTodos();
   }, []);
 
-  const addTodo = async (text: string) => {
+  const addTodo = async (text: string, priority: string, status:string) => {
     const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
-    console.log('1. 유저 프로필:', userProfile);
 
     const newTodo: Todo = {
       id: nanoid(),
       text,
       author: userProfile.nickname || "익명", // 닉네임이 없을 경우 "익명"으로 표시
       isChecked: false,
+      priority,
+      status,
+      timestamp: Date.now()
     };
-    console.log('2. 새로운 Todo:', newTodo);
 
     try {
-      const requestBody = {
-        action: 'add',
-        newTodo
-      };
-      console.log('3. 요청 데이터:', requestBody);
-
+    
       const response = await fetch(`${baseURL}/api/todos`, {
         method: 'PATCH',
         headers: {
@@ -89,21 +88,17 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
           newTodo 
         })
       });
-      console.log('4. 응답 상태:', response.status);
-      const responseData = await response.json();
-      console.log('5. 응답 데이터:', responseData);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
   
       // 성공적으로 API 호출이 완료된 후에 상태 업데이트
       
-
       setTodos(prev => {
         const newTodos = prev.length === 1 && prev[0].id === DEFAULT_TODO_ID 
           ? [newTodo] 
           : [...prev, newTodo];
-        console.log('6. 업데이트된 todos:', newTodos);
         return newTodos;
       });
 
@@ -112,6 +107,57 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
       // 에러 발생 시 사용자에게 알림을 표시하거나 다른 에러 처리를 수행할 수 있습니다.
     }
   };
+
+  const toggleStatus = async (id: string) => {
+    // 현재 todo 찾기
+    const currentTodo = todos.find(todo => todo.id === id);
+    if (!currentTodo) return;
+  
+    // 상태 변경 로직
+    let newStatus;
+    if (currentTodo.status === "todo") {
+      newStatus = "Progress";
+    } else if (currentTodo.status === "Progress") {
+      newStatus = "Done";
+    } else {
+      newStatus = "todo";
+    }
+
+    // 즉시 상태 업데이트
+    setTodos(prev => 
+      prev.map(todo => 
+        todo.id === id ? { ...todo, status: newStatus } : todo
+      )
+    );
+
+    try {
+      const response = await fetch(`${baseURL}/api/todos`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'updateStatus',
+          id,
+          newStatus
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error('상태 업데이트 실패');
+      }
+
+    } catch (error) {
+      console.error('상태 업데이트 중 에러 발생:', error);
+      // API 호출 실패 시 원래 상태로 되돌리기
+      setTodos(prev => 
+        prev.map(todo => 
+          todo.id === id ? { ...todo, status: currentTodo.status } : todo
+        )
+      );
+    }
+};
+
 
   const deleteTodo = async (id: string) => {
     const updatedTodos = todos.filter((todo) => todo.id !== id);
@@ -152,6 +198,8 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+
+
   // Context Provider로 자식 컴포넌트들을 감싸서 todos와 addTodo를 전달
   return (
     <TodoContext.Provider
@@ -162,6 +210,7 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
         setTodos,
         deleteSelected,
         deleteTodo,
+        toggleStatus,
       }}
     >
       {children}

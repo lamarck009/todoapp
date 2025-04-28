@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "@/css/style.css"
 import { TodoProvider } from "../context/TodoContext";
 import { StarProvider } from "../context/StarContext";
 import Layout from '@/layout/layout';

@@ -11,48 +11,63 @@ import { Todo } from "@/context/TodoContext"; // Todo 타입 가져오기
 import { ItemInterface } from "react-sortablejs";
 import { DEFAULT_TODOS, DEFAULT_TODO_ID } from "@/constants/defaultTodos";
 import { FaUser } from "react-icons/fa";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
-
+import Write from "./write";
+import EditModal from "./EditModal";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 const Homepage: React.FC = () => {
   // TodoContext에서 필요한 상태와 함수들을 가져옴
-  const { todos, toggleTodo, setTodos, deleteTodo } = useTodo();
+  const { todos, toggleTodo, setTodos, deleteTodo, toggleStatus } = useTodo();
   // 페이지 라우팅을 위한 router 객체
   const router = useRouter();
   // 체크된 항목이 있는지 여부를 추적하는 상태
   const [hasCheckedItems, setHasCheckedItems] = useState(false);
-  const isInitialMount = useRef(true);  // 초기화 플래그 생성
+  const isInitialMount = useRef(true); // 초기화 플래그 생성
+  const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
 
+  // 컴포넌트 마운트 시 todos 로드
 
-// 컴포넌트 마운트 시 todos 로드
-
-  // 할일 항목 토글(체크/체크해제) 처리 함수
+  // 할일 진행도 처리 함수
   const handleToggle = (e: React.MouseEvent, id: string) => {
-    // 클릭된 요소가 체크박스이거나 리스트 아이템일 때만 토글
-    const target = e.target as HTMLElement;
-    if (target.tagName === "INPUT" || target === e.currentTarget) {
-      e.stopPropagation(); // 이벤트 버블링 방지
-      const currentTodo = todos.find((t) => t.id === id);
-      const newCheckedState = !currentTodo?.isChecked;
-      toggleTodo(id);
-      const otherCheckedExists = todos.some(
-        (todo) => todo.id !== id && todo.isChecked
-      );
-      setHasCheckedItems(newCheckedState || otherCheckedExists);
+    e.stopPropagation(); // 이벤트 버블링 방지
+    toggleStatus(id); // 상태 변경
+  };
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // 초기값을 false로 설정
+
+  useEffect(() => {
+    // 클라이언트 사이드에서만 실행
+    const savedTheme = window.localStorage.getItem("theme");
+    if (savedTheme) {
+      setIsDarkMode(savedTheme === "dark");
+    } else {
+      window.localStorage.setItem("theme", "light");
     }
+  }, []);
+
+  // 다크모드
+  const toggleDarkMode = () => {
+    document.body.classList.toggle("dark-mode");
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("theme", newTheme);
   };
 
   // 새 할일 작성 페이지로 이동하는 함수
   const handleWriteClick = () => {
-    router.push("/write");
+    setIsWriteModalOpen(true);
   };
 
   // 수정 페이지로 이동하는 함수
   const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const listItem = e.currentTarget.closest("li");
     const dataId = listItem?.getAttribute("data-id");
-    router.push(`/edit/${dataId}`);
+    if (dataId) {
+      setEditingTodoId(dataId);
+      setIsEditModalOpen(true);
+    }
   };
 
   //삭제
@@ -60,51 +75,111 @@ const Homepage: React.FC = () => {
     e.stopPropagation(); // 이벤트 버블링 방지
     const listItem = e.currentTarget.closest("li");
     const dataId = listItem?.getAttribute("data-id");
-    
-    if (dataId) {
-      try {
-        await deleteTodo(dataId); // context의 deleteTodo 함수 호출
-      } catch (error) {
-        console.error('삭제 실패:', error);
-      }
+
+    if (dataId && listItem) {
+      // 먼저 페이드아웃 애니메이션 적용
+      listItem.classList.add("fade-out");
+
+      // 애니메이션 완료 후 실제 삭제
+      setTimeout(async () => {
+        try {
+          await deleteTodo(dataId);
+        } catch (error) {
+          console.error("삭제 실패:", error);
+          listItem.classList.remove("fade-out");
+        }
+      }, 400);
     }
   };
 
+  //정렬관련 로직
   const handleSetList = async (newState: ItemInterface[]) => {
     const updatedTodos = newState.map((item) => {
       const existingTodo = todos.find((todo) => todo.id === item.id);
 
       return {
-        ...existingTodo, 
+        ...existingTodo,
       } as Todo;
     });
-  
+
     setTodos(updatedTodos);
-  
+
     // JSON 파일 업데이트
     try {
-
       const response = await fetch(`${API_URL}/api/todos`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          action: 'reorder',
-          updatedTodos: updatedTodos
+          action: "reorder",
+          updatedTodos: updatedTodos,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update todos order');
+        throw new Error("Failed to update todos order");
       }
     } catch (error) {
       console.error("7. 에러 발생:", error);
       setTodos(todos); // 에러 발생 시 원래 순서로 되돌리기
     }
   };
-  
-  // 저장된 todos를 로드하는 함수 수정
+
+  //섹션 정렬 로직
+  const [currentFilter, setCurrentFilter] = useState("all");
+
+  const handleFilterChange = (filter: string) => {
+    setCurrentFilter(filter);
+  };
+
+  // 날짜순 정렬 로직(4.28)
+  const [isDateAscending, setIsDateAscending] = useState(true);
+
+  const handleSortByDate = async () => {
+    setIsDateAscending(!isDateAscending); // 클릭할 때마다 정렬 방향 전환
+
+    const sortedTodos = [...todos].sort((a, b) => {
+      return isDateAscending
+        ? a.timestamp - b.timestamp // 오름차순 (과거 → 최신)
+        : b.timestamp - a.timestamp; // 내림차순 (최신 → 과거)
+    });
+
+    await handleSetList(sortedTodos);
+  };
+
+  //중요도 정렬 로직(4.28)
+  const priorityStyles = [
+    { text: "상", className: "high" },
+    { text: "중", className: "medium" },
+    { text: "하", className: "low" },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handleSortByPriority = async () => {
+    const nextIndex = (currentIndex + 1) % priorityStyles.length;
+    setCurrentIndex(nextIndex);
+    const priorityOrders = [
+      { high: 1, medium: 2, low: 3 }, // "상" 클릭시
+      { medium: 1, high: 2, low: 3 }, // "중" 클릭시
+      { low: 1, medium: 2, high: 3 }, // "하" 클릭시
+    ] as const; // 여기에 as const 추가
+
+    const priorityOrder = priorityOrders[nextIndex];
+
+    const sortedTodos = [...todos].sort((a, b) => {
+      const aPriority =
+        priorityOrder[a.priority as keyof typeof priorityOrder] || 4;
+      const bPriority =
+        priorityOrder[b.priority as keyof typeof priorityOrder] || 4;
+      return aPriority - bPriority;
+    });
+
+    await handleSetList(sortedTodos);
+  };
+
+  // 저장된 todos를 로드하는 함수
   const loadSavedTodos = async () => {
     try {
       const response = await fetch(`${API_URL}/data/todos.json`);
@@ -113,32 +188,29 @@ const Homepage: React.FC = () => {
         return;
       }
       const data = await response.json();
-      
-    // 데이터가 있고 실제 할일이 있는 경우에만 해당 데이터 사용
-    if (data.todos && data.todos.length > 0) {
-      const realTodos = data.todos.filter((todo: Todo) => todo.id !== DEFAULT_TODO_ID);
-      if (realTodos.length > 0) {
-        setTodos(realTodos);
-        return;
+
+      // 데이터가 있고 실제 할일이 있는 경우에만 해당 데이터 사용
+      if (data.todos && data.todos.length > 0) {
+        const realTodos = data.todos.filter(
+          (todo: Todo) => todo.id !== DEFAULT_TODO_ID
+        );
+        if (realTodos.length > 0) {
+          setTodos(realTodos);
+          return;
+        } else setTodos(DEFAULT_TODOS);
       }
-      else
-      setTodos(DEFAULT_TODOS);
-    }
-    
-    // 실제 할일이 없는 경우에만 DEFAULT_TODOS 사용
-    
+
+      // 실제 할일이 없는 경우에만 DEFAULT_TODOS 사용
     } catch (error) {
-      console.error('Failed to load saved todos:', error);
+      console.error("Failed to load saved todos:", error);
       setTodos(DEFAULT_TODOS);
     }
   };
-  
+
   // useEffect 수정
   useEffect(() => {
     loadSavedTodos();
   }, []);
-  
-
 
   return (
     <Maincontainer>
@@ -146,24 +218,91 @@ const Homepage: React.FC = () => {
       <GlobalStyle />
       <AppContainer>
         {/* 헤더 영역 */}
-        <Headers>
-          <Title>Todo 앱 : 일정관리</Title>
-          <UserIcon onClick={() => router.push("/auth")}>
-            <FaUser size={20} />
-          </UserIcon>
+        <Headers className="Header">
+          {/* 프로필 사진을 넣을경우 동그란 사진으로. 아닐경우 아이콘으로 */}
+          <HeaderTop className="HeaderTop">
+            <button
+              className={`toggle-switch ${isDarkMode ? "dark-mode" : ""}`}
+              onClick={toggleDarkMode}
+            >
+              <div
+                id="toggle-darkmode"
+                className={`${isDarkMode ? "dark-mode" : ""}`}
+              >
+                🌙
+              </div>
+            </button>
+            <UserIcon className="profile" onClick={() => router.push("/auth")}>
+              <FaUser size={20} />
+            </UserIcon>
+          </HeaderTop>
+          <HeaderBottom>
+            <Title>My Todo List</Title>
+          </HeaderBottom>
         </Headers>
 
         {/* 버튼 컨테이너 영역 */}
-        <HeaderButtonContainer>
+        <HeaderButtonContainer className="HeaderButtonContainer">
           {/* 섹션 버튼 영역 */}
           <SectionButtonContainer>
-            <SectionButton>전체</SectionButton>
-            <SectionButton>완료</SectionButton>
+            <div className="category-section">
+              <SectionButton
+                id="filter-all"
+                onClick={() => handleFilterChange("all")}
+                className={currentFilter === "all" ? "active" : ""}
+              >
+                All
+              </SectionButton>
+              <SectionButton
+                id="filter-todo"
+                onClick={() => handleFilterChange("todo")}
+                className={currentFilter === "todo" ? "active" : ""}
+              >
+                To-Do
+              </SectionButton>
+              <SectionButton
+                id="filter-progress"
+                onClick={() => handleFilterChange("Progress")}
+                className={currentFilter === "Progress" ? "active" : ""}
+              >
+                Progress
+              </SectionButton>
+              <SectionButton
+                id="filter-done"
+                onClick={() => handleFilterChange("Done")}
+                className={currentFilter === "Done" ? "active" : ""}
+              >
+                Done
+              </SectionButton>
+            </div>
+            <div className="sort-section">
+              <SectionButton id="sort-priority" onClick={handleSortByPriority}>
+                <span>중요도순 :</span>
+                <div
+                  className={`PriorityText ${priorityStyles[currentIndex].className}`}
+                >
+                  {" "}
+                  {priorityStyles[currentIndex].text}
+                </div>
+              </SectionButton>
+              <SectionButton id="sort-date" onClick={handleSortByDate}>
+                날짜순 {isDateAscending ? "↑" : "↓"}
+              </SectionButton>
+            </div>
           </SectionButtonContainer>
 
           {/* 메뉴 버튼 영역 */}
-          <MenuButtonContainer>
+          <MenuButtonContainer className="MenuButtonContainer">
             <AddButton onClick={handleWriteClick} />
+            <Write
+              isOpen={isWriteModalOpen}
+              onClose={() => setIsWriteModalOpen(false)}
+            />
+            <EditModal
+              isOpen={isEditModalOpen}
+              onClose={() => setIsEditModalOpen(false)}
+              todoId={editingTodoId}
+            />
           </MenuButtonContainer>
         </HeaderButtonContainer>
 
@@ -173,13 +312,14 @@ const Homepage: React.FC = () => {
           <StyledSortable
             list={todos}
             setList={(newState) => {
-              if (isInitialMount.current) {  // 최초 마운트인 경우
-                isInitialMount.current = false;  // 플래그를 false로 변경
-                return;  // 함수 실행 중단  
-                }
-                // 이후의 호출에서만 실제 로직 실행
-                handleSetList(newState);
-              }}
+              if (isInitialMount.current) {
+                // 최초 마운트인 경우
+                isInitialMount.current = false; // 플래그를 false로 변경
+                return; // 함수 실행 중단
+              }
+              // 이후의 호출에서만 실제 로직 실행
+              handleSetList(newState);
+            }}
             animation={150}
             ghostClass="sortable-ghost"
             dragClass="sortable-drag"
@@ -190,14 +330,16 @@ const Homepage: React.FC = () => {
               <ListItem
                 key={todo.id}
                 data-id={todo.id}
-                className="drag-handle" // 전체 ListItem을 드래그 핸들로 설정
+                className={`drag-handle ${todo.priority} ${todo.status} ${
+                  currentFilter === "all" || currentFilter === todo.status
+                    ? ""
+                    : "hidden"
+                }`}
               >
-                <CheckBox
-                  type="checkbox"
-                  checked={todo.isChecked}
-                  onChange={() => {}}
-                  onClick={(e) => handleToggle(e, todo.id)} // 체크박스 클릭 시 이벤트 전파 방지
-                />
+                <StatusCircle
+                  onClick={(e) => handleToggle(e, todo.id)}
+                  className={todo.status}
+                ></StatusCircle>
                 <ListItemText>{todo.text}</ListItemText>
                 <div
                   style={{
@@ -246,7 +388,7 @@ const GlobalStyle = createGlobalStyle`
 const StyledSortable = styled(ReactSortable)<{ list: Todo[] }>`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 5px;
 `;
 
 const Maincontainer = styled.div`
@@ -264,9 +406,23 @@ const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 500px;
-  max-height: 600px;
-  height: 600px;
+  max-height: 800px;
+  height: 800px;
   overflow: hidden;
+`;
+
+const Headers = styled.header`
+  display: flex;
+  position: relative;
+  justify-content: center; // 중앙 정렬을 위해 변경
+  flex-direction: column;
+  align-items: center;
+  background-color: ${colors.head};
+  color: white;
+  width: 100%;
+  height: fit-content;
+  border-radius: 25px 25px 0 0;
+  padding: ${Basic_Padding}px;
 `;
 
 const Title = styled.h1`
@@ -274,23 +430,26 @@ const Title = styled.h1`
   color: white;
   text-shadow: 1px 1px 2px #000;
 `;
-const Headers = styled.header`
-  display: flex;
-  position: relative;
-  justify-content: center; // 중앙 정렬을 위해 변경
-  align-items: center;
-  background-color: ${colors.head};
-  color: white;
-  width: 100%;
-  height: 70px;
-  border-radius: 25px 25px 0 0;
-  padding: ${Basic_Padding}px;
-`;
 
+const HeaderTop = styled.div`
+  display: flex;
+  width: 100%;
+  padding: 0 10px;
+  height: fit-content;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+`;
+const HeaderBottom = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50%; // Headers의 하단 절반
+`;
 
 const List = styled.ul<{ isDraggingOver?: boolean }>`
   list-style-type: none;
-  padding: ${Basic_Padding}px;
+  padding: 0 ${Basic_Padding}px;
   padding-left: ${P_S_Padding}px;
   padding-bottom: 0px;
   width: 100%;
@@ -335,60 +494,134 @@ const ListUnderline = styled.div`
 
 const ListItem = styled.li`
   padding: 10px;
-  background-color: white;
-  margin-top: 5px;
   border-radius: 5px;
   height: 3rem;
   border: 2px solid transparent;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   cursor: pointer;
-
   user-select: none;
+  transform: translateY(10px);
+
   &:hover {
     cursor: pointer;
     border: 2px solid ${colors.checked};
   }
+ &.hidden {
+    display: none;
+
+  /* 페이드인 애니메이션 */
+  &.fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  /* 페이드아웃 애니메이션 */
+  &.fade-out {
+    animation: fadeOut 0.4s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+  }
+
+
 `;
-const CheckBox = styled.input`
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+const StatusCircle = styled.div`
   width: 24px;
   height: 24px;
   border: 2px solid #666666;
-  border-radius: 3px;
+  border-radius: 50%;
   position: relative;
   cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
 
-  &:checked {
-    background-color: white;
+  &.todo {
+    &::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: ${colors.icon};
+      mask-image: url("asset/Progress1.svg");
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      top: 0%;
+      left: 0%;
+    }
+  }
+  &.Progress {
+    &::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: ${colors.icon};
+      mask-image: url("asset/Progress2.svg");
+      mask-size: 100%;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      top: 0%;
+      left: 0%;
+    }
   }
 
-  &:checked::after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: red;
-    mask-image: url("asset/check.svg"); /* SVG 파일을 마스크로 사용 */
-    mask-size: contain; /* 마스크 크기 조절 */
-    mask-repeat: no-repeat; /* 마스크 반복 없음 */
-    mask-position: center; /* 마스크 위치 */
-    top: -25%;
-    left: 10%;
-    animation: checkAfter 0.1s ease forwards;
+  &.Done {
+    background: white;
+    &::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: red;
+      mask-image: url("asset/check2.svg");
+      mask-size: 120%;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      top: -20%;
+      left: 10%;
+      animation: checkAfter 0.5s ease forwards;
+    }
   }
 
   @keyframes checkAfter {
     0% {
-      transform: scale(0);
+      transform: scale(0.8) rotate(-45deg);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.1) rotate(0deg);
+      opacity: 0.5;
     }
     100% {
-      transform: scale(1.7);
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
     }
+  }
+
+  &:hover {
+    transform: scale(1.1);
   }
 `;
 
@@ -405,25 +638,15 @@ const HeaderButtonContainer = styled.div`
   height: fit-content;
   position: relative;
   max-width: 600px;
-  height: 50px;
   padding: 10px 20px;
-
   background-color: ${colors.head2};
   gap: 10px;
-  align-items: center;
+  align-items: flex-end;
 `;
 
 const SectionButtonContainer = styled.div`
-  display: flex;
-  justify-content: flex-start;
-  width: 100%;
-  height: fit-content;
-  position: relative;
   flex: 1;
-  height: 50px;
-  padding: 10px;
   background-color: ${colors.head2};
-  gap: 10px;
   border-bottom: 3px solid transparent; // 먼저 투명한 border 설정
   border-image: ${colors.hr}; // gradient 적용
   border-image-slice: 1; // 필수! gradient가 제대로 보이게 함
@@ -431,27 +654,34 @@ const SectionButtonContainer = styled.div`
 `;
 
 const SectionButton = styled.button`
-  background-color: rgb(255, 255, 255);
+  white-space: nowrap; // 줄바꿈 방지
   color: black;
-  border: none;
-  height: 100%;
+  height: fit-content;
+  width: fit-content;
   display: flex;
   align-items: center;
   font-size: 1.2em;
-  padding: 15px 5px;
+  padding: 5px 5px;
   border-radius: 5px;
-  border: 2px solid #666666;
   cursor: pointer;
+  align-items: center; // 세로 중앙 정렬
+
+  // active 상태일 때의 스타일
+  &.active {
+    background-color: #666666;
+    color: white;
+    // 추가로 원하는 스타일
+    // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    // transform: scale(1.05);
+  }
 `;
 
 const MenuButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
-  width: 100%;
+  width: fit-content;
   height: fit-content;
   position: relative;
-  flex: 1;
-  height: 50px;
   padding: 10px;
   background-color: ${colors.head2};
   gap: 10px;
@@ -538,8 +768,6 @@ const CalendarButton = styled.button`
 `;
 
 const UserIcon = styled.div`
-  position: absolute;
-  right: ${P_S_Padding}px;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -547,10 +775,9 @@ const UserIcon = styled.div`
   transform: scale(1.3);
   justify-content: center;
   &:hover {
-   transform: scale(1.5);
-   opacity : 0.8;
-   transition:all ease-in 0.2s;
-  
+    transform: scale(1.5);
+    opacity: 0.8;
+    transition: all ease-in 0.2s;
   }
 `;
 
