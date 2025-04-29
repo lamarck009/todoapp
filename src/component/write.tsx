@@ -88,7 +88,7 @@ const ModalOverlay = styled.div`
 const Title = styled.h1`
   font-size: 2em;
   text-align: center;
-  color: white;
+  color: black;
 `;
 
 const WriteContainer = styled.div`

@@ -21,11 +21,23 @@ const Homepage: React.FC = () => {
   // 페이지 라우팅을 위한 router 객체
   const router = useRouter();
   // 체크된 항목이 있는지 여부를 추적하는 상태
-  const [hasCheckedItems, setHasCheckedItems] = useState(false);
   const isInitialMount = useRef(true); // 초기화 플래그 생성
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+// 검색어와 검색 적용 여부를 위한 상태
+const [searchText, setSearchText] = useState<string>("");
+const [activeSearchText, setActiveSearchText] = useState<string>("");
+
+// 검색 버튼 클릭 시 실행될 함수
+const handleSearchButton = () => {
+  setActiveSearchText(searchText);
+};
+
+// 화면에 보여질 필터링된 todos
+const displayTodos = todos.filter((todo) => 
+  todo.text.toLowerCase().includes(activeSearchText.toLowerCase())
+);
 
   // 컴포넌트 마운트 시 todos 로드
 
@@ -36,13 +48,20 @@ const Homepage: React.FC = () => {
   };
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // 초기값을 false로 설정
 
+
   useEffect(() => {
     // 클라이언트 사이드에서만 실행
     const savedTheme = window.localStorage.getItem("theme");
     if (savedTheme) {
+      // 저장된 테마가 있으면 그 값을 사용
       setIsDarkMode(savedTheme === "dark");
-    } else {
+      document.body.classList.toggle("dark-mode", savedTheme === "dark");
+    }
+    if (!savedTheme) {
+      // 저장된 테마가 없을 경우에만 라이트 모드로 초기화
+      setIsDarkMode(false);
       window.localStorage.setItem("theme", "light");
+      document.body.classList.remove("dark-mode");
     }
   }, []);
 
@@ -244,7 +263,7 @@ const Homepage: React.FC = () => {
         {/* 버튼 컨테이너 영역 */}
         <HeaderButtonContainer className="HeaderButtonContainer">
           {/* 섹션 버튼 영역 */}
-          <SectionButtonContainer>
+          <SectionButtonContainer className="SectionButtonContainer">
             <div className="category-section">
               <SectionButton
                 id="filter-all"
@@ -258,26 +277,26 @@ const Homepage: React.FC = () => {
                 onClick={() => handleFilterChange("todo")}
                 className={currentFilter === "todo" ? "active" : ""}
               >
-                To-Do
+                시작
               </SectionButton>
               <SectionButton
                 id="filter-progress"
                 onClick={() => handleFilterChange("Progress")}
                 className={currentFilter === "Progress" ? "active" : ""}
               >
-                Progress
+                진행
               </SectionButton>
               <SectionButton
                 id="filter-done"
                 onClick={() => handleFilterChange("Done")}
                 className={currentFilter === "Done" ? "active" : ""}
               >
-                Done
+                완료
               </SectionButton>
             </div>
             <div className="sort-section">
               <SectionButton id="sort-priority" onClick={handleSortByPriority}>
-                <span>중요도순 :</span>
+                <span>중요도</span>
                 <div
                   className={`PriorityText ${priorityStyles[currentIndex].className}`}
                 >
@@ -286,13 +305,18 @@ const Homepage: React.FC = () => {
                 </div>
               </SectionButton>
               <SectionButton id="sort-date" onClick={handleSortByDate}>
-                날짜순 {isDateAscending ? "↑" : "↓"}
+                날짜 {isDateAscending ? "↑" : "↓"}
               </SectionButton>
             </div>
           </SectionButtonContainer>
 
           {/* 메뉴 버튼 영역 */}
           <MenuButtonContainer className="MenuButtonContainer">
+            <SearchInput
+              value={searchText || ""}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+            <SearchButton onClick={handleSearchButton}/>
             <AddButton onClick={handleWriteClick} />
             <Write
               isOpen={isWriteModalOpen}
@@ -326,7 +350,7 @@ const Homepage: React.FC = () => {
             handle=".drag-handle"
             forceFallback={false}
           >
-            {todos.map((todo) => (
+            {displayTodos.map((todo) => (
               <ListItem
                 key={todo.id}
                 data-id={todo.id}
@@ -406,8 +430,8 @@ const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 500px;
-  max-height: 800px;
-  height: 800px;
+  max-height: 700px;
+  height: 700px;
   overflow: hidden;
 `;
 
@@ -633,7 +657,7 @@ const ListItemText = styled.span`
 
 const HeaderButtonContainer = styled.div`
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
   width: 100%;
   height: fit-content;
   position: relative;
@@ -645,7 +669,8 @@ const HeaderButtonContainer = styled.div`
 `;
 
 const SectionButtonContainer = styled.div`
-  flex: 1;
+  display: flex;
+  width: 100%;
   background-color: ${colors.head2};
   border-bottom: 3px solid transparent; // 먼저 투명한 border 설정
   border-image: ${colors.hr}; // gradient 적용
@@ -679,7 +704,7 @@ const SectionButton = styled.button`
 const MenuButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
-  width: fit-content;
+  width: 100%;
   height: fit-content;
   position: relative;
   padding: 10px;
@@ -692,12 +717,34 @@ const MenuButtonContainer = styled.div`
 `;
 
 const AddButton = styled.button`
-  background-color: ${colors.icon};
+  background-color: ${colors.icon2};
   mask-image: url("asset/plus.svg"); /* SVG 파일을 마스크로 사용 */
   mask-size: contain; /* 마스크 크기 조절 */
   mask-repeat: no-repeat; /* 마스크 반복 없음 */
   mask-position: center; /* 마스크 위치 */
   border: none; // 버튼 테두리 제거
+  height: 24px;
+  width: 24px;
+  padding: 5px;
+  cursor: pointer;
+
+  &:hover {
+    transform: scale(1.2); // hover 시 크기 증가
+    transition: transform 0.1s ease; // 부드러운 애니메이션 효과
+  }
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+`;
+
+const SearchButton = styled.button`
+  background-color: ${colors.icon2};
+  mask-image: url("asset/search.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  border: none;
   height: 24px;
   width: 24px;
   padding: 5px;

@@ -12,14 +12,16 @@ export const colors = {
     head:'var(--head-color)',
     head2:'var(--head-color2)',
     list:'var(--list-color)',
+    icon2: 'var(--icon-color)',
     write:'#d7ecf8',
     hr: 'linear-gradient(to right, #00c6ff, #0072ff)',
     hover: '#e0e0e0',
+    icon: '#0070f3',
     checked: '#1976D2',
     red: '#ff0000',
     btok: '#4caf50',
     btno: '#f44336',
-    icon: '#0070f3',
+    
     
 } as const;
 
